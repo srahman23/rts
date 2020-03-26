@@ -19,16 +19,26 @@ public class NodeEdit : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        //If right-clicked
         if (Input.GetButtonDown("Fire1"))
         {
-            Vector3 clickPos = new Vector3(0, 0, 0);
+
+            Vector3 clickPos;
+
+            /*
+             * Creates a plane that is aligned with the terrain. 
+             * We then raycast and check the distance from mouse pointer to the plane.
+             * The distance also happens to be the distance from mouse pointer to the terrain as long as the terrain is flat.
+             */
+
             Plane plane = new Plane(Vector3.up, 0f);
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
-            float distanceToPlane;
-
+            //If the ray collides with the plane, it will output the ray to distanceToPlane
+            float distanceToPlane; 
             if(plane.Raycast(ray, out distanceToPlane))
             {
+
                 clickPos = ray.GetPoint(distanceToPlane);
                 print(clickPos);
                 updateMap(clickPos);
@@ -38,11 +48,13 @@ public class NodeEdit : MonoBehaviour
     }
     void updateMap(Vector3 position)
     {
-
+        //Rounds the world coordinates to the nearest tile value before sending to MapGen.
         int xPos = (int)Math.Round(position.x / 10.0);
         int zPos = (int)Math.Round(position.z / 10.0);
        
-        print(xPos +" "+zPos);
+        //Debug line if you want to check.
+        //print(xPos +" "+zPos);
+
         mapGen.updatePosition(xPos, zPos);
     }
 }
