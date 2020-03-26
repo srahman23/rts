@@ -84,13 +84,7 @@ public class MapGen : MonoBehaviour
         }
     }
 
-    public void updatePosition(int xPos, int zPos)
-    {
-        Material material = nodes[xPos, zPos].GetComponent<Renderer>().material;
-        material.SetColor("_Color", Color.red);
-    }
-
-    void displayMap()
+    public void displayMap()
     {
         for (int i = 0; i < mapSize; ++i)
         {
@@ -101,6 +95,8 @@ public class MapGen : MonoBehaviour
                 Color newColor = new Color(noiseValue, noiseValue, noiseValue);
                 Material material = nodes[i,j].GetComponent<Renderer>().material;
                 material.SetColor("_Color", newColor);
+
+                nodes[i, j].GetComponent<NodeData>().setNoiseValue(mapArray[i, j]);
             }
         }
     }
