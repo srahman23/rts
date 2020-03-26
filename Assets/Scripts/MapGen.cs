@@ -6,10 +6,11 @@ public class MapGen : MonoBehaviour
 {
 
     public int mapSize;
-    public float[][] mapArray;
+    public float[,] mapArray;
 
-    public GameObject floor;
-    GameObject[][] floorTiles;
+    public GameObject node;
+
+    public GameObject[,] nodes;
 
     public float scale, xOffset, yOffset;
     float lastScale, xLastOffset, yLastOffset;  
@@ -20,27 +21,20 @@ public class MapGen : MonoBehaviour
         lastScale = scale;
         xLastOffset = xOffset;
         yLastOffset = yOffset;
-        mapArray = new float[mapSize][];
-        floorTiles = new GameObject[mapSize][];
-
-        for (int i = 0; i < mapSize; ++i)
-        {
-            mapArray[i] = new float[mapSize];
-            floorTiles[i] = new GameObject[mapSize];
-        }
-
-
+        mapArray = new float[mapSize, mapSize];
+        nodes = new GameObject[mapSize, mapSize];
 
         //I'm thinking of layering multiple noise maps on top of each other. Right now I got these two layers generated. 
         mapArray = generateNoiseMap(mapArray, scale);
         //resourceArray = generateNoiseMap(resourceArray, scale); //Unused for now.
 
-        createTileMap();
+        adjustCamera();
+        createNodeMap();
         displayMap();
+
     }
 
-
-    float[][] generateNoiseMap(float[][] array, float scale)
+    float[,] generateNoiseMap(float[,] array, float scale)
     {
         for (int i = 0; i < mapSize; ++i)
         {
@@ -50,16 +44,24 @@ public class MapGen : MonoBehaviour
                 float x = (float)i;
                 float y = (float)j;
 
-                float iPerlin = (x / mapSize * scale)+xOffset;
-                float jPerlin = (y / mapSize * scale)+yOffset;
+                float iPerlin = (x /mapSize * scale)+xOffset;
+                float jPerlin = (y /mapSize * scale)+yOffset;
                 float noiseValue = Mathf.PerlinNoise(iPerlin, jPerlin);
                 
-                array[i][j] = noiseValue;
+                array[i,j] = noiseValue;
             }
         }
         return array;
     }
-    void createTileMap()
+    void adjustCamera()
+    {
+        GameObject camera = this.gameObject.transform.GetChild(0).gameObject;
+
+        camera.transform.position = new Vector3((mapSize * 10 / 2), (mapSize*10), (mapSize * 10 / 2));
+        camera.transform.Rotate(90, 0, 0, Space.Self);
+    }
+
+    void createNodeMap()
     {
         for (int i = 0; i < mapSize; ++i)
         {
@@ -68,35 +70,40 @@ public class MapGen : MonoBehaviour
                 float x = (float)i;
                 float z = (float)j;
 
-                //Offset values depends on the size of the gameobject tile
                 float xOffset = (x * 10f);
                 float zOffset = (z * 10f);
 
                 Vector3 position = new Vector3(xOffset, 0, zOffset);
                 //Creates multiple gameobjects. Set mapSize to small initial values for performance. Probably can do this a better way but this is for testing.
-                floorTiles[i][j] = Instantiate(floor, position, Quaternion.AngleAxis(0, Vector3.left)) as GameObject;
-                floorTiles[i][j].transform.parent = this.transform;
-                floorTiles[i][j].name = "maptile" + i + j;
+                nodes[i,j] = Instantiate(node, position, Quaternion.AngleAxis(0, Vector3.left)) as GameObject;
+                nodes[i,j].transform.parent = this.transform;
+                nodes[i,j].name = "Node(" + i+ "," + j+")";
+
+                nodes[i, j].GetComponent<NodeData>().setNoiseValue(mapArray[i, j]);
             }
         }
     }
 
+    public void updatePosition(int xPos, int zPos)
+    {
+        Material material = nodes[xPos, zPos].GetComponent<Renderer>().material;
+        material.SetColor("_Color", Color.red);
+    }
 
     void displayMap()
     {
         for (int i = 0; i < mapSize; ++i)
         {
-            for(int j =0; j <mapSize; ++j)
+            for (int j = 0; j < mapSize; ++j)
             {
                 //Adds the color to each game tile. 
-                float noiseValue = mapArray[i][j] * 0.5f;
+                float noiseValue = mapArray[i,j];
                 Color newColor = new Color(noiseValue, noiseValue, noiseValue);
-                Material material = floorTiles[i][j].GetComponent<Renderer>().material;
+                Material material = nodes[i,j].GetComponent<Renderer>().material;
                 material.SetColor("_Color", newColor);
             }
         }
     }
-
 
     // Update is called once per frame
     void Update()
